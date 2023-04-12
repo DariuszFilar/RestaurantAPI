@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using RestaurantAPI.Entities;
 using RestaurantAPI.Models;
 using RestaurantAPI.Services;
+using System.Security.Claims;
 
 namespace RestaurantAPI.Controllers
 {
     [Route("restaurant")]
     [ApiController]
+    [Authorize]
     public class RestaurantController : Controller
     {
         private readonly IRestaurantService _restaurantService;
@@ -19,15 +21,17 @@ namespace RestaurantAPI.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public ActionResult CreateRestaurant([FromBody] CreateRestaurantDto dto)
-        {          
+        {
+            var userId = int.Parse(User.FindFirst(c => c.Type == ClaimTypes.NameIdentifier).Value);
             var id = _restaurantService.Create(dto);
 
             return Created($"/api/restaurant/{id}", null);
         }
 
         [HttpGet]
-        [AllowAnonymous]
+        [Authorize]
         public ActionResult<IEnumerable<RestaurantDto>> GetAll()
         {
             var restaurantsDtos = _restaurantService.GetAll();
