@@ -47,7 +47,7 @@ namespace RestaurantAPI.Services
 
         public string GenerateJwt(LoginDto dto)
         {
-            var user = _context.Users
+            var user = _context.Users                
                 .Include(u => u.Role)
                 .FirstOrDefault(u => u.Email == dto.Email);
 
@@ -63,13 +63,19 @@ namespace RestaurantAPI.Services
                 throw new BadRequestException("Invalid username or password");
             }
 
-            var clims = new List<Claim>()
+            var claims = new List<Claim>()
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
                 new Claim(ClaimTypes.Role, $"{user.Role.Name}"),
-                new Claim("DateOfBirth", user.DateOfBirth.Value.ToString("yyyy-MM-dd")),
-                new Claim("Nationality", user.Nationality)
+                new Claim("DateOfBirth", user.DateOfBirth.Value.ToString("yyyy-MM-dd"))                
+            };
+
+            if (!String.IsNullOrEmpty(user.Nationality))
+            {
+                claims.Add(
+                    new Claim("Nationality", user.Nationality)
+                    );
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_authenticationSettings.JwtKey));
@@ -78,7 +84,7 @@ namespace RestaurantAPI.Services
 
             var token = new JwtSecurityToken(_authenticationSettings.JwtIssuer,
                 _authenticationSettings.JwtIssuer,
-                clims,
+                claims,
                 expires: expires,
                 signingCredentials: cred);
 
