@@ -5,6 +5,8 @@ using RestaurantAPI.Authroziation;
 using RestaurantAPI.Entities;
 using RestaurantAPI.Exceptions;
 using RestaurantAPI.Models;
+using System.Linq.Expressions;
+using System.Security.AccessControl;
 using System.Security.Claims;
 
 namespace RestaurantAPI.Services
@@ -12,7 +14,7 @@ namespace RestaurantAPI.Services
     public interface IRestaurantService
     {
         RestaurantDto GetById(int id);
-        IEnumerable<RestaurantDto> GetAll();
+        PageResult<RestaurantDto> GetAll(RestaurantQuery query);
         int Create(CreateRestaurantDto dto);
         void Delete(int id);
         void Update(int id, UpdateRestaurantDto dto);
@@ -53,17 +55,42 @@ namespace RestaurantAPI.Services
             return result;
         }
 
-        public IEnumerable<RestaurantDto> GetAll()
+        public PageResult<RestaurantDto> GetAll(RestaurantQuery query)
         {
-            var restaurants = _dbContext
+            var baseQuery = _dbContext
                 .Restaurants
                 .Include(r => r.Address)
                 .Include(r => r.Dishes)
+                .Where(r => query.SearchPhase == null || r.Name.ToLower().Contains(query.SearchPhase.ToLower()) || r.Description.ToLower().Contains(query.SearchPhase.ToLower()));
+
+            if (!string.IsNullOrEmpty(query.SortBy))
+            {
+                var columnsSelectors = new Dictionary<string, Expression<Func<Restaurant, object>>()
+                {
+                    {nameof(Restaurant.Name), r => r.Name },
+                    {nameof(Restaurant.Description), r => r.Description },
+                    {nameof(Restaurant.Category), r => r.Category },
+                };
+
+                var selectedColumn = columnsSelectors[query.SortBy];
+
+               baseQuery = query.SortDirection == SortDirection.ASC ? 
+                    baseQuery.OrderBy(selectedColumn) : 
+                    baseQuery.OrderByDescending(selectedColumn);
+            }
+
+            var restaurants = baseQuery
+                .Skip(query.PageSize * (query.PageNumber - 1))
+                .Take(query.PageSize)
                 .ToList();
+
+            var totalItemsCount = baseQuery.Count();
 
             var restaurantsDtos = _mapper.Map<List<RestaurantDto>>(restaurants);
 
-            return restaurantsDtos;
+            var result = new PageResult<RestaurantDto>(restaurantsDtos, query.PageSize, query.PageNumber, totalItemsCount);
+
+            return result;
         }
 
         public int Create(CreateRestaurantDto dto)

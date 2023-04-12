@@ -32,9 +32,9 @@ namespace RestaurantAPI.Controllers
 
         [HttpGet]
         [Authorize]
-        public ActionResult<IEnumerable<RestaurantDto>> GetAll()
+        public ActionResult<IEnumerable<RestaurantDto>> GetAll([FromQuery] RestaurantQuery query)
         {
-            var restaurantsDtos = _restaurantService.GetAll();
+            var restaurantsDtos = _restaurantService.GetAll(query);
 
             return Ok(restaurantsDtos);
         }
@@ -60,7 +60,7 @@ namespace RestaurantAPI.Controllers
         [HttpPut("{id}")]
         [AllowAnonymous]
         public ActionResult Update([FromBody] UpdateRestaurantDto dto, [FromRoute] int id)
-        {           
+        {
             _restaurantService.Update(id, dto);
 
             return Ok();
