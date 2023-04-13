@@ -100,6 +100,8 @@ builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
+app.UseResponseCaching();
+app.UseStaticFiles();
 var scope = app.Services.CreateScope();
 var seeder = scope.ServiceProvider.GetRequiredService<RestaurantSeeder>();
 

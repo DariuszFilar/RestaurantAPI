@@ -65,7 +65,7 @@ namespace RestaurantAPI.Services
 
             if (!string.IsNullOrEmpty(query.SortBy))
             {
-                var columnsSelectors = new Dictionary<string, Expression<Func<Restaurant, object>>()
+                var columnsSelectors = new Dictionary<string, Expression<Func<Restaurant, object>>>()
                 {
                     {nameof(Restaurant.Name), r => r.Name },
                     {nameof(Restaurant.Description), r => r.Description },
